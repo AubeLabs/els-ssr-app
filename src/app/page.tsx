@@ -1,113 +1,126 @@
-import Image from "next/image";
+// src/app/page.tsx
+'use client';
+import { useEffect, useState } from 'react';
 
-export default function Home() {
+import { TimetableEntry } from '../types/index'
+import { MealServiceEntry } from '../types/index'
+
+import { fetchTimetable } from '@/utils/fetchTimetable'
+import { fetchMealservice } from '@/utils/fetchMealservice'
+import { getCurrentDateAndYear } from '@/utils/dateUtils';
+
+
+const HomePage = () => {
+  const [currentDate, setCurrentDate] = useState<{ date: string, year: string }>();
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [meals, setMeals] = useState<MealServiceEntry[]>([]);
+
+  const [grade, setGrade] = useState('2'); // 학년 설정 (기본값)
+  const [classNm, setClassNm] = useState('2'); // 반 설정 (기본값)
+
+  useEffect(() => {
+    const {date, year} = getCurrentDateAndYear();
+    setCurrentDate({date, year});
+
+    const fetchData = async () => {
+      try {
+        const timetableData = await fetchTimetable(date, year, grade, classNm)
+        console.log(timetableData);
+        setTimetable(timetableData)
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+
+      try {
+        const mealserviceData = await fetchMealservice(date)
+        setMeals(mealserviceData)
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    fetchData();
+  }, [grade, classNm]);
+
+  function formatDate(dateStr : string) {
+    const year = dateStr.slice(0, 4);
+    const month = dateStr.slice(4, 6);
+    const day = dateStr.slice(6, 8);
+    return `${year}-${month}-${day}`;
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
+    <>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold">{formatDate(currentDate? currentDate.date : '')}</h1>
+      <h1 className="text-2xl font-bold">서울이문초등학교 {grade}학년 {classNm}반</h1>
+    </div>
+    <div className="p-4">
+      <div className="mt-4">
+        <h1 className="text-2xl font-bold">시간표</h1>
+        {timetable.length ? (
+          <ul>
+            {timetable.map((entry, index) => (
+              <li key={index} className="mt-2">
+                <span className="font-semibold">{entry.PERIO} 교시 : </span>
+                {entry.ITRT_CNTNT}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No timetable data available.</p>
+        )}
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+    </div>
+    <div className="p-4">
+      <div className="mt-4">
+        <h1 className="text-2xl font-bold">급식정보</h1>
+        {meals.length ? (
+          <>
+            {meals.map((entry, index) => (
+              <ul key={index}>
+                <li key='DDISH${index}' className="mt-2">
+                  <span className="font-semibold">요리 : </span><br/>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: entry.DDISH_NM,
+                    }}
+                  />
+                </li>
+                <li key='ORPLC${index}' className="mt-2">
+                  <span className="font-semibold">원산지 : </span><br/>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: entry.ORPLC_INFO,
+                    }}
+                  />
+                </li>
+                <li key='CAL${index}' className="mt-2">
+                  <span className="font-semibold">칼로리 : </span>
+                  {entry.CAL_INFO}
+                </li>
+                <li key='NTR${index}' className="mt-2">
+                  <span className="font-semibold">영양정보 : </span><br/>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: entry.NTR_INFO,
+                    }}
+                  />
+                </li>
+              </ul>
+            ))}
+            </>
+        ) : (
+          <p>No mealservice data available.</p>
+        )}
       </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      <div className="mt-4">
+      - 요리명에 표시된 번호 : 알레르기를 유발할수 있는 식재료입니다.<br/>
+      - 알레르기 유발 식재료 번호 : 1.난류, 2.우유, 3.메밀, 4.땅콩, 5.대두, 6.밀, 7.고등어, 8.게, 9.새우, 10.돼지고기, 11.복숭아, 12.토마토, 13.아황산류, 14.호두, 15.닭고기, 16.쇠고기, 17.오징어, 18.조개류(굴, 전복, 홍합 포함), 19.잣
       </div>
-    </main>
-  );
+    </div>
+    </>
+  )
 }
+
+export default HomePage;
