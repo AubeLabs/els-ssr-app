@@ -39,6 +39,7 @@ javascript코드 복사
 const nextConfig = {
   output: 'export',
   distDir: 'out',
+  trailingSlash: true,    // 정적 사이트 빌드 시 새로고침(refresh) 404 에러 방지
   images: {
     unoptimized: true,
   },
@@ -78,7 +79,7 @@ npm run build
 
 1. **AWS Management Console**에 로그인합니다.
 2. **S3 서비스**로 이동합니다.
-3. **버킷 생성** 버튼을 클릭하고, 이름을 지정하고 **생성**합니다. 예: **els-ssr-app-deployed**.
+3. **버킷 생성** 버튼을 클릭하고, 이름을 지정하고 **생성**합니다. 예: **els-ssr-app**.
 
 ### 2.2 버킷 설정
 
@@ -94,11 +95,13 @@ npm run build
       "Effect": "Allow",
       "Principal": "*",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::els-ssr-app-deployed/*"
+      "Resource": "arn:aws:s3:::els-ssr-app/*"
     }
   ]
 }
 ```
+
+4. **속성** 탭에서 **정적 웹 사이트 호스팅** 설정에서 정적 웹 사이트 호스팅 활성화하고 인덱스 문서에 "index.html" 입력합니다.
 
 ### 2.3 파일 업로드
 
@@ -110,7 +113,7 @@ npm run build
 AWS CLI를 사용하여 S3에 파일을 업로드하고, HTTP와 HTTPS를 통해 접근할 수 있도록 설정합니다.
 
 ```bash
-aws s3 cp ./out s3://els-ssr-app-deployed/ --recursive
+aws s3 cp ./out s3://els-ssr-app/ --recursive
 ```
 
 `--acl public-read` 옵션은 S3 설정에 따라서 사용 가능합니다.
@@ -121,8 +124,9 @@ aws s3 cp ./out s3://els-ssr-app-deployed/ --recursive
 
 1. **CloudFront 서비스**로 이동합니다.
 2. **배포 생성** 버튼을 클릭합니다.
-3. **원본 도메인 이름**에 S3 버킷의 URL을 입력합니다.
-   예: [els-ssr-app.s3.ap-northeast-2.amazonaws.com](http://els-ssr-app.s3.ap-northeast-2.amazonaws.com/)
+3. **원본 도메인 이름**에 S3 버킷의 URL을 입력합니다. S3 웹 사이트 엔드포인트를 사용하도록 선택합니다.
+   예: S3 버킷 URL - els-ssr-app.s3.ap-northeast-2.amazonaws.com
+   예: S3 웹 사이트 엔드포인트 - els-ssr-app.s3-website.ap-northeast-2.amazonaws.com
 4. **원본 액세스**는 **`공개`**를 선택합니다.
 5. **기본 캐시 동작** 설정에서 `Viewer Protocol Policy`를 `HTTP and HTTPS`로 설정합니다.
 6. **설정**에서 `기본값 루트 객체(Default Root Object)`에 `index.html`을 입력합니다. 이 설정을 통해 CloudFront는 기본 경로에서 `index.html`을 로드하도록 구성됩니다.

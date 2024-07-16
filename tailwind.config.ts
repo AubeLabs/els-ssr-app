@@ -2,19 +2,32 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-      },
+        colors: {
+            primary: '#1a73e8', // 구글 포토의 파란색 계열
+            secondary: '#e8f0fe',
+            accent: '#34a853',
+        },
+        typography: (theme: (arg0: string) => any) => ({
+            DEFAULT: {
+                css: {
+                    color: theme('colors.gray.900'),
+                    a: {
+                        color: theme('colors.primary'),
+                        '&:hover': {
+                            color: theme('colors.primary'),
+                        },
+                    },
+                },
+            },
+        }),
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 };
 export default config;
